@@ -1,0 +1,57 @@
+{% extends 'calculator/base.html' %}
+{% load static %}
+
+{% block title %}Список утеплителей{% endblock %}
+
+{% block content %}
+<form method="get">
+    <input type="text" name="search" value="{{ search }}" placeholder="Поиск по названию или теплопроводности">
+</form>
+
+<div class="list-container">
+    {% for insulator in insulators %}
+        <a href="{% url 'insulator_detail' insulator.id %}?search={{ search|urlencode }}" class="card-link">
+            <div class="card-container">
+                <!-- Картинка -->
+                <div class="card-image-container">
+                    <img src="{{ minio_url }}{{ insulator.image_key }}" alt="{{ insulator.name }}" class="card-image">
+                </div>
+
+                <!-- Контент -->
+                <div class="card-body-container">
+                    <!-- Наличие -->
+                    <div class="card-presence-container">
+                        <p class="card-presence-text">
+                            {% if insulator.availability %}В наличии{% else %}Нет в наличии{% endif %}
+                        </p>
+                    </div>
+
+                    <!-- Название -->
+                    <div class="card-text-container">
+                        <p class="card-body-text">{{ insulator.name }}</p>
+                                            <div class="card-price-container">
+                        <p class="card-price-text">{{ insulator.price_per_m2 }} ₽</p>
+                        <div class="card-count-container">
+                            <p class="card-count-text">за 1 шт</p>
+                        </div>
+                    </div>
+                    </div>
+
+                    <!-- Цена -->
+
+                </div>
+            </div>
+        </a>
+    {% endfor %}
+</div>
+
+<!-- Корзина -->
+<div class="cart-container">
+    <a href="{% url 'request_detail' current_request_id %}?search={{ search|urlencode }}" class="cart-link">
+        <img src="{% static 'assets/photo/cart.jpg' %}" alt="Корзина" class="cart-image">
+        {% if request_count > 0 %}
+            <span class="cart-count">{{ request_count }}</span>
+        {% endif %}
+    </a>
+</div>
+{% endblock %}

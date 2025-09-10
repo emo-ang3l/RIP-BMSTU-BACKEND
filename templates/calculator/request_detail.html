@@ -1,0 +1,27 @@
+{% extends 'calculator/base.html' %}
+{% load static %}
+
+{% block title %}Заявка №{{ request.id }}{% endblock %}
+
+{% block content %}
+    <h1>Заявка</h1>
+    <h2>Утеплители в заявке:</h2>
+    <div class="request-list-container">
+        {% for ins in insulators %}
+            <div class="request-tile-wrapper">
+                <div class="tile-order">{{ forloop.counter }}</div>
+                <div class="request-tile">
+                    <div class="tile-image">
+                        <img src="{{ minio_url }}{{ ins.image_key }}" alt="{{ ins.name }}">
+                    </div>
+                    <div class="tile-content">
+                        <h2>{{ ins.name }}</h2>
+                        <p>Теплопроводность: {{ ins.thermal_conductivity }} Вт/м·К</p>
+                        <p>Комментарий: {{ ins.comment }}</p>
+                        <p>Количество: <input type="number" class="quantity-input" value="{{ ins.quantity }}"></p>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
