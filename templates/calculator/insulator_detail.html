@@ -9,7 +9,7 @@
             <div class="tile-image">
                 <img src="{{ minio_url }}{{ insulator.image_key }}" alt="{{ insulator.name }}">
             </div>
-            <div class="tile-content">
+            <div class="tile-content-detail">
                 <h2>{{ insulator.name }}</h2>
                 <p>{% if insulator.availability %}В наличии{% else %}Нет в наличии{% endif %}</p>
                 <p>Теплопроводность: {{ insulator.thermal_conductivity }} Вт/м·К</p>

@@ -6,6 +6,10 @@
 {% block content %}
     <h1>Заявка</h1>
     <h2>Утеплители в заявке:</h2>
+    <h2>Сопротивление: 12 м²·°C/В</h2>
+
+
+    
     <div class="request-list-container">
         {% for ins in insulators %}
             <div class="request-tile-wrapper">
@@ -15,10 +19,19 @@
                         <img src="{{ minio_url }}{{ ins.image_key }}" alt="{{ ins.name }}">
                     </div>
                     <div class="tile-content">
-                        <h2>{{ ins.name }}</h2>
-                        <p>Теплопроводность: {{ ins.thermal_conductivity }} Вт/м·К</p>
-                        <p>Комментарий: {{ ins.comment }}</p>
-                        <p>Количество: <input type="number" class="quantity-input" value="{{ ins.quantity }}"></p>
+                        <h3>{{ ins.name }}</h3>
+                        <p>Полупроводность: {{ ins.thermal_conductivity }} Вт/м·К</p>
+
+                        <div class="mm-group">
+                            <label>Комментарий:</label>
+                            <input type="text-detail" value="{{ ins.comment|default:'' }}" readonly class="comment-input">
+                        </div>
+ 
+                        <div class="mm-group">
+                            <label>Результат (толщина):</label>
+                            <input type="number" value="{{ ins.calculated_thickness }}" readonly class="quantity-input">
+                            <label>мм</label>
+                        </div>
                     </div>
                 </div>
             </div>

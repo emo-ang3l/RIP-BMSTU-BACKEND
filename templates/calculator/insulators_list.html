@@ -29,16 +29,13 @@
                     <!-- Название -->
                     <div class="card-text-container">
                         <p class="card-body-text">{{ insulator.name }}</p>
-                                            <div class="card-price-container">
-                        <p class="card-price-text">{{ insulator.price_per_m2 }} ₽</p>
-                        <div class="card-count-container">
-                            <p class="card-count-text">за 1 шт</p>
+                        <div class="card-price-container">
+                            <p class="card-price-text">{{ insulator.thermal_conductivity }} мм</p>
+                            <div class="card-count-container">
+                                <p class="card-count-text">за 1 шт</p>
+                            </div>
                         </div>
                     </div>
-                    </div>
-
-                    <!-- Цена -->
-
                 </div>
             </div>
         </a>
@@ -48,10 +45,12 @@
 <!-- Корзина -->
 <div class="cart-container">
     <a href="{% url 'request_detail' current_request_id %}?search={{ search|urlencode }}" class="cart-link">
-        <img src="{% static 'assets/photo/cart.jpg' %}" alt="Корзина" class="cart-image">
-        {% if request_count > 0 %}
-            <span class="cart-count">{{ request_count }}</span>
-        {% endif %}
+        <div class="cart-image-wrapper">
+            <img src="{% static 'assets/photo/cart.jpg' %}" alt="Корзина" class="cart-image">
+            {% if request_count > 0 %}
+                <span class="cart-count-badge">{{ request_count }}</span>
+            {% endif %}
+        </div>
     </a>
 </div>
 {% endblock %}

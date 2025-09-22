@@ -20,7 +20,7 @@ from calculator import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.insulators_list, name='insulators_list'),  # Список утеплителей
-    path('insulator/<int:id>/', views.insulator_detail, name='insulator_detail'),  # Детали
-    path('request/<int:id>/', views.request_detail, name='request_detail'),  # Заявка
+    path('', views.insulators_list, name='insulators_list'), 
+    path('insulator/<int:id>/', views.insulator_detail, name='insulator_detail'),  
+    path('request/<int:id>/', views.request_detail, name='request_detail'),  
 ]
