@@ -328,7 +328,6 @@ header {
 .tile-content {
     display: flex
 ;
-    gap: 20px;
     padding: 20px;
     max-width: 1080px;
     margin: 0 auto;
@@ -336,7 +335,7 @@ header {
     /* display: flex
 ; */
     justify-content: center;
-    /* gap: 10px; */
+    gap: 1px;
     /* font-size: 16px; */
     align-items: center;
     flex-wrap: nowrap;
@@ -438,7 +437,7 @@ form {
 
 input[type="text"] {
     padding: 8px 12px;
-    width: 310px; /* Убираем фиксированную ширину */
+    width: 1px; /* Убираем фиксированную ширину */
    /* Ограничиваем ширину контейнером */
     border: 1px solid transparent;
     border-radius: 20px;

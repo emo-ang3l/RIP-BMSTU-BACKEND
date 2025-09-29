@@ -1,11 +1,11 @@
 version: '3.7'
 
 x-minio-common: &minio-common
-  image: quay.io/minio/minio:RELEASE.2023-10-07T15-07-38Z # Последняя стабильная версия MinIO
+  image: quay.io/minio/minio:RELEASE.2023-10-07T15-07-38Z 
   command: server --console-address ":9001" http://minio{1...4}/data{1...2}
   environment:
     MINIO_ROOT_USER: minioadmin
-    MINIO_ROOT_PASSWORD: minioadmin124 # Более сложный пароль
+    MINIO_ROOT_PASSWORD: minioadmin124 
   expose:
     - "9000"
     - "9001"

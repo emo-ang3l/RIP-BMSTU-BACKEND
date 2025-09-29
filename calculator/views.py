@@ -61,20 +61,34 @@ INSULATORS = [
     },
 ]
 
-CURRENT_REQUEST = {
-    'id': 1,
-    'climate_zone': 'Moscow Region',
-    'required_r_value': 3.5,
-    'wall_type': 'Brick',
-    'norm_standard': 'SNiP 23-02-2003',
-    'insulators_in_request': [
-        {'insulator_id': 1, 'comment': 'Для внешней стены', 'quantity': 1, 'order': 1, 'is_main': True},
-        {'insulator_id': 2, 'comment': 'Для крыши', 'quantity': 1, 'order': 2, 'is_main': False},
-        {'insulator_id': 3, 'comment': 'Для крыши', 'quantity': 1, 'order': 3, 'is_main': False},
-        {'insulator_id': 4, 'comment': 'Для крыши', 'quantity': 1, 'order': 4, 'is_main': False},
-        {'insulator_id': 5, 'comment': 'Для крыши', 'quantity': 1, 'order': 5, 'is_main': False},
-    ]
-}
+CURRENT_REQUESTS = [
+    {
+        'id': 1,
+        'climate_zone': 'Moscow Region',
+        'required_r_value': 3.5,
+        'wall_type': 'Brick',
+        'norm_standard': 'SNiP 23-02-2003',
+        'insulators_in_request': [
+            {'insulator_id': 1, 'comment': 'Для внешней стены', 'quantity': 1, 'order': 1, 'is_main': True},
+            {'insulator_id': 2, 'comment': 'Для крыши', 'quantity': 1, 'order': 2, 'is_main': False},
+            {'insulator_id': 3, 'comment': 'Для крыши', 'quantity': 1, 'order': 3, 'is_main': False},
+            {'insulator_id': 4, 'comment': 'Для крыши', 'quantity': 1, 'order': 4, 'is_main': False},
+            {'insulator_id': 5, 'comment': 'Для крыши', 'quantity': 1, 'order': 5, 'is_main': False},
+        ]
+    },
+    # Example additional request
+    {
+        'id': 2,
+        'climate_zone': 'St. Petersburg',
+        'required_r_value': 4.0,
+        'wall_type': 'Concrete',
+        'norm_standard': 'SNiP 23-02-2003',
+        'insulators_in_request': [
+            {'insulator_id': 2, 'comment': 'Для фундамента', 'quantity': 2, 'order': 1, 'is_main': True},
+            {'insulator_id': 1, 'comment': 'Для стен', 'quantity': 1, 'order': 2, 'is_main': False},
+        ]
+    }
+]
 
 def insulators_list(request):
     search = request.GET.get('search', '')
@@ -82,13 +96,14 @@ def insulators_list(request):
         i for i in INSULATORS
         if search.lower() in i['name'].lower() or search == str(i['thermal_conductivity']) or search == str(i['price_per_m2'])
     ]
-    request_count = len(CURRENT_REQUEST['insulators_in_request'])
+    # Use the first request's insulators count for consistency, or adjust as needed
+    request_count = len(CURRENT_REQUESTS[0]['insulators_in_request']) if CURRENT_REQUESTS else 0
     return render(request, 'calculator/insulators_list.html', {
         'insulators': filtered_insulators,
         'request_count': request_count,
         'search': search,
         'minio_url': MINIO_URL,
-        'current_request_id': CURRENT_REQUEST['id']
+        'current_request_id': CURRENT_REQUESTS[0]['id'] if CURRENT_REQUESTS else None
     })
 
 def insulator_detail(request, id):
@@ -96,31 +111,34 @@ def insulator_detail(request, id):
     if not insulator:
         raise Http404("Утеплитель не найден")
     search = request.GET.get('search', '')
-    request_count = len(CURRENT_REQUEST['insulators_in_request'])
+    # Use the first request's insulators count for consistency, or adjust as needed
+    request_count = len(CURRENT_REQUESTS[0]['insulators_in_request']) if CURRENT_REQUESTS else 0
     return render(request, 'calculator/insulator_detail.html', {
         'insulator': insulator,
         'minio_url': MINIO_URL,
-        'current_request_id': CURRENT_REQUEST['id'],
+        'current_request_id': CURRENT_REQUESTS[0]['id'] if CURRENT_REQUESTS else None,
         'request_count': request_count,
         'search': search
     })
 
 def request_detail(request, id):
-    if CURRENT_REQUEST['id'] != id:
+    request_data = next((r for r in CURRENT_REQUESTS if r['id'] == id), None)
+    if not request_data:
         raise Http404("Заявка не найдена")
     insulators = []
-    for mm in CURRENT_REQUEST['insulators_in_request']:
+    for mm in request_data['insulators_in_request']:
         insulator = next((i for i in INSULATORS if i['id'] == mm['insulator_id']), None)
         if insulator:
-            mm['calculated_thickness'] = round(CURRENT_REQUEST['required_r_value'] * insulator['thermal_conductivity'] * 1000)
+            mm['calculated_thickness'] = round(request_data['required_r_value'] * insulator['thermal_conductivity'] * 1000)
             insulators.append({**insulator, **mm})
+
     search = request.GET.get('search', '')
-    request_count = len(CURRENT_REQUEST['insulators_in_request'])
+    request_count = len(request_data['insulators_in_request'])
     return render(request, 'calculator/request_detail.html', {
-        'request': CURRENT_REQUEST,
+        'request': request_data,
         'insulators': insulators,
         'minio_url': MINIO_URL,
-        'current_request_id': CURRENT_REQUEST['id'],
+        'current_request_id': request_data['id'],
         'request_count': request_count,
         'search': search
     })
