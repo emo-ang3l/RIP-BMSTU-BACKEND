@@ -1,0 +1,477 @@
+/* ==========================================================================
+   Global Styles
+   ========================================================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+    background: #f6f6f6;
+    color: #333333;
+    margin: 0;
+}
+
+/* ==========================================================================
+   Base Template Styles (base.html)
+   ========================================================================== */
+
+header {
+    min-height: 15px;
+    background: #fff;
+    padding: 25px;
+    text-align: right;
+}
+
+.header-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.header-buttons button {
+    background: none;
+    color: #333333;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+}
+
+/* ==========================================================================
+   Insulator Detail Styles (insulator_detail.html)
+   ========================================================================== */
+
+.detail-container {
+    display: flex;
+    justify-content: center;
+    padding: 30px;
+}
+
+.detail-tile {
+    display: flex;
+    flex-direction: row;
+    gap: 30px;
+    padding: 25px;
+    width: 100%;
+    max-width: 900px;
+}
+
+.tile-image img {
+    width: 100%;
+    height: auto;
+    max-height: 170px;
+    object-fit: contain;
+    border-radius: 2px;
+}
+
+.tile-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 12px;
+    font-size: 16px;
+}
+
+.tile-content-detail {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 12px;
+    font-size: 16px;
+}
+
+.tile-content h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: #202225;
+    font-weight: 700;
+}
+
+.tile-content p {
+    margin: 4px 0;
+    color: #555555;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+/* ==========================================================================
+   Insulators List Styles (insulators_list.html)
+   ========================================================================== */
+
+/* ==========================================================================
+   Insulators List Styles (insulators_list.html)
+   ========================================================================== */
+
+.list-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 20px;
+    padding: 20px;
+    max-width: 1080px;
+    margin: 0 auto;
+}
+
+.card-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 238px;
+    background: #fff;
+    border-radius: 2px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.card-container:hover .card-body-text {
+    color: hsl(237, 47%, 54%);
+}
+
+.card-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.card-image-container {
+    display: flex;
+    padding: 15px;
+    justify-content: center;
+    align-items: center;
+    align-self: stretch;
+}
+
+.card-image {
+    width: 154px;
+    height: 154px;
+    object-fit: cover;
+    border: none;
+}
+
+.card-body-container {
+    display: flex;
+    padding: 6px 12px 24px 12px;
+    flex-direction: column;
+    align-items: center;
+    gap: 13px;
+    align-self: stretch;
+}
+
+.card-presence-container {
+    display: flex;
+    padding: 8px 0px 12px;
+    align-items: center;
+    align-self: stretch;
+}
+
+.card-presence-text {
+    color: #62ca71;
+    font-family: "Roboto-Medium", sans-serif;
+    font-weight: bold;
+    font-size: 13px;
+    line-height: 112%;
+}
+
+.card-presence-text.not-available {
+    color: #777777;
+}
+
+.card-text-container {
+    display: inline-block;
+    font-family: "Roboto-Regular", sans-serif;
+    font-size: 14px;
+    line-height: 146%;
+    color: #202225;
+}
+
+.card-body-text {
+    display: flex;
+    width: 210px;
+    height: 24px;
+    flex-direction: column;
+    justify-content: center;
+    font-family: "Roboto-Regular", sans-serif;
+    font-size: 14px;
+    line-height: 146%;
+    color: #202225;
+}
+
+.card-price-container {
+    display: flex;
+    height: 25px;
+    align-items: center;
+    gap: 6px;
+    align-self: stretch;
+    margin: 13px 0px 0px;
+}
+
+.card-price-text {
+    color: #202225;
+    font-family: "Roboto-Bold", sans-serif;
+    font-size: 20px;
+    font-weight: bold;
+    line-height: 124%;
+}
+
+.card-count-container {
+    display: flex;
+    padding: 4px;
+    margin: 4px 0px 4px 6px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    align-self: stretch;
+    background: #f8f8f8;
+}
+
+.card-count-text {
+    color: rgba(119, 119, 119, 0.6);
+    text-align: center;
+    font-family: "Roboto", sans-serif;
+    font-size: 12px;
+    line-height: 15px;
+}
+
+.cart-container {
+    display: flex;
+    justify-content: flex-end;
+    padding: 20px;
+}
+
+.cart-image {
+    width: 154px;
+    height: 154px;
+}
+
+.cart-image-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.cart-count-badge {
+    position: absolute;
+    top: 15px;
+    right: -3px;
+    background-color: #f06149;
+    color: #ffffff;
+    border-radius: 50%; /* Делает круглым */
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-family: "Roboto", sans-serif;
+    font-weight: bold;
+}
+
+/* ==========================================================================
+   Request Detail Styles (request_detail.html)
+   ========================================================================== */
+
+.request-list-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    max-width: 1080px;
+    margin: 0 auto;
+}
+
+.request-tile-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 940px;
+    margin: 0 auto;
+}
+
+.tile-order {
+    width: 40px;
+    text-align: center;
+    font-family: "Roboto", sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: #202225;
+}
+
+.request-tile {
+    display: flex;
+    flex-direction: row;
+    background: #F5F5F5;
+    border-radius: 2px;
+    gap: 20px;
+    padding: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 900px;
+    height: auto;
+    min-height: 200px;
+    margin: 0;
+    border: 1px solid transparent;
+    overflow: hidden;
+}
+
+.tile-image {
+    flex: 0 0 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.tile-content {
+    display: flex
+;
+    padding: 20px;
+    max-width: 1080px;
+    margin: 0 auto;
+    /* flex: 1; */
+    /* display: flex
+; */
+    justify-content: center;
+    gap: 1px;
+    /* font-size: 16px; */
+    align-items: center;
+    flex-wrap: nowrap;
+    flex-direction: row;
+}
+
+.tile-content h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #202225;
+    font-weight: 700;
+}
+
+.tile-content p {
+    margin: 5px 0;
+    color: #555555;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+.mm-fields {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 0;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    max-width: 100%; /* Ограничиваем ширину */
+}
+
+.mm-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+
+}
+
+.mm-fields label {
+    font-weight: bold;
+    color: #202225;
+    min-width: 60px;
+    white-space: nowrap; /* Предотвращаем перенос текста в label */
+}
+
+.quantity-input {
+    padding: 5px 12px;
+    font-size: 12px;
+    width: 60px;
+    background: #ffffff;
+    color: #333333;
+    border: 1px solid #f06149;
+    border-radius: 6px;
+    text-align: center;
+    font-family: "Roboto", sans-serif;
+}
+
+.quantity-input:read-only {
+    background: #f8f8f8;
+    cursor: not-allowed;
+}
+
+.cart-image {
+    width: 154px;
+    height: 154px;
+}
+
+.comment-input {
+    padding: 5px 12px;
+    font-size: 12px;
+    width: 155px;
+    background: #ffffff;
+    color: #333333;
+    border: 1px solid #f06149;
+    border-radius: 6px;
+    font-family: "Roboto", sans-serif;
+}
+
+.comment-input:read-only {
+    background: #f8f8f8;
+    cursor: not-allowed;
+}
+
+.result {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #202225;
+}
+
+/* ==========================================================================
+   Form and Input Styles (Shared)
+   ========================================================================== */
+
+form {
+    text-align: center;
+    margin: 15px;
+}
+
+input[type="text"] {
+    padding: 8px 12px;
+    width: 100px; /* Убираем фиксированную ширину */
+   /* Ограничиваем ширину контейнером */
+    border: 1px solid transparent;
+    border-radius: 20px;
+    font-size: 14px;
+    background: #ffffff;
+    color: #333333;
+    outline: none;
+    transition: box-shadow 0.3s;
+}
+
+input[type="text-detail"] {
+    padding: 8px 12px;
+   /* Ограничиваем ширину контейнером */
+    border: 1px solid transparent;
+    border-radius: 20px;
+    font-size: 14px;
+    background: #ffffff;
+    color: #333333;
+    outline: none;
+    transition: box-shadow 0.3s;
+}
+input[type="text-detail"]:focus {
+    box-shadow: 0 0 5px rgba(217, 79, 0, 0.5);
+}
+
+input[type="text"]:focus {
+    box-shadow: 0 0 5px rgba(217, 79, 0, 0.5);
+}
+
+button {
+    padding: 5px 10px;
+    background: #f06149;
+    color: #FFFFFF;
+    border: none;
+    cursor: pointer;
+    border-radius: 6px;
+}

@@ -1,0 +1,46 @@
+{% extends 'calculator/base.html' %}
+{% load static %}
+
+{% block title %}Заявка №{{ request.id }}{% endblock %}
+
+{% block content %}
+    <h1>Заявка №{{ request.id }}</h1>
+    <p>Климатическая зона: {{ request.climate_zone }}</p>
+    <p>Тип стены: {{ request.wall_type }}</p>
+    <p>Норматив: {{ request.norm_standard }}</p>
+    <p>Требуемое тепловое сопротивление: {{ request.required_r_value }} м²·°C/Вт</p>
+    <h2>Утеплители в заявке:</h2>
+    
+    <form method="post" action="{% url 'delete_request' request.id %}">
+        {% csrf_token %}
+        <button type="submit">Удалить заявку</button>
+    </form>
+
+    <div class="request-list-container">
+        {% for ins in insulators %}
+            <div class="request-tile-wrapper">
+                <div class="tile-order">{{ forloop.counter }}</div>
+                <div class="request-tile">
+                    <div class="tile-image">
+                        <img src="{{ minio_url }}{{ ins.image_key }}" alt="{{ ins.name }}">
+                    </div>
+                    <div class="tile-content">
+                        <h3>{{ ins.name }}</h3>
+                        <p>Теплопроводность: {{ ins.thermal_conductivity }} Вт/м·К</p>
+                        <div class="mm-group">
+                            <label>Комментарий:</label>
+                            <input type="text" value="{{ ins.comment|default:'' }}" class="comment-input">
+                        </div>
+                        <div class="mm-group">
+                            <label>Результат (толщина):</label>
+                            <input type="number" value="{{ ins.calculated_thickness }}" class="quantity-input">
+                            <label>мм</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <p>Нет утеплителей в заявке</p>
+        {% endfor %}
+    </div>
+{% endblock %}
