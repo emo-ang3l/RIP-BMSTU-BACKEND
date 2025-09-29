@@ -9,7 +9,7 @@
 <body>
     <header>
         <div class="header-buttons">
-            <a href="{% url 'insulators_list' %}?search={{ search|urlencode }}"><button>Домой</button></a>
+            <a href="{% url 'insulators_list' %}?query={{ query|urlencode }}"><button>Домой</button></a>
         </div>
     </header>
     {% block content %}{% endblock %}

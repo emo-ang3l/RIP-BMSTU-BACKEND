@@ -75,33 +75,21 @@ CURRENT_REQUESTS = [
             {'insulator_id': 4, 'comment': 'Для крыши', 'quantity': 1, 'order': 4, 'is_main': False},
             {'insulator_id': 5, 'comment': 'Для крыши', 'quantity': 1, 'order': 5, 'is_main': False},
         ]
-    },
-    # Example additional request
-    {
-        'id': 2,
-        'climate_zone': 'St. Petersburg',
-        'required_r_value': 4.0,
-        'wall_type': 'Concrete',
-        'norm_standard': 'SNiP 23-02-2003',
-        'insulators_in_request': [
-            {'insulator_id': 2, 'comment': 'Для фундамента', 'quantity': 2, 'order': 1, 'is_main': True},
-            {'insulator_id': 1, 'comment': 'Для стен', 'quantity': 1, 'order': 2, 'is_main': False},
-        ]
     }
 ]
 
 def insulators_list(request):
-    search = request.GET.get('search', '')
+    query = request.GET.get('query', '')
     filtered_insulators = [
         i for i in INSULATORS
-        if search.lower() in i['name'].lower() or search == str(i['thermal_conductivity']) or search == str(i['price_per_m2'])
+        if query.lower() in i['name'].lower() or query == str(i['thermal_conductivity']) or query == str(i['price_per_m2'])
     ]
     # Use the first request's insulators count for consistency, or adjust as needed
     request_count = len(CURRENT_REQUESTS[0]['insulators_in_request']) if CURRENT_REQUESTS else 0
     return render(request, 'calculator/insulators_list.html', {
         'insulators': filtered_insulators,
         'request_count': request_count,
-        'search': search,
+        'query': query,
         'minio_url': MINIO_URL,
         'current_request_id': CURRENT_REQUESTS[0]['id'] if CURRENT_REQUESTS else None
     })
@@ -110,7 +98,7 @@ def insulator_detail(request, id):
     insulator = next((i for i in INSULATORS if i['id'] == id), None)
     if not insulator:
         raise Http404("Утеплитель не найден")
-    search = request.GET.get('search', '')
+    query = request.GET.get('query', '')
     # Use the first request's insulators count for consistency, or adjust as needed
     request_count = len(CURRENT_REQUESTS[0]['insulators_in_request']) if CURRENT_REQUESTS else 0
     return render(request, 'calculator/insulator_detail.html', {
@@ -118,7 +106,7 @@ def insulator_detail(request, id):
         'minio_url': MINIO_URL,
         'current_request_id': CURRENT_REQUESTS[0]['id'] if CURRENT_REQUESTS else None,
         'request_count': request_count,
-        'search': search
+        'query': query
     })
 
 def request_detail(request, id):
@@ -132,7 +120,7 @@ def request_detail(request, id):
             mm['calculated_thickness'] = round(request_data['required_r_value'] * insulator['thermal_conductivity'] * 1000)
             insulators.append({**insulator, **mm})
 
-    search = request.GET.get('search', '')
+    query = request.GET.get('query', '')
     request_count = len(request_data['insulators_in_request'])
     return render(request, 'calculator/request_detail.html', {
         'request': request_data,
@@ -140,5 +128,5 @@ def request_detail(request, id):
         'minio_url': MINIO_URL,
         'current_request_id': request_data['id'],
         'request_count': request_count,
-        'search': search
+        'query': query
     })

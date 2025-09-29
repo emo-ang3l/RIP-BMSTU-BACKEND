@@ -5,12 +5,12 @@
 
 {% block content %}
 <form method="get">
-    <input type="text" name="search" value="{{ search }}" placeholder="Поиск">
+    <input type="text" name="query" value="{{ query }}" placeholder="Поиск">
 </form>
 
 <div class="list-container">
     {% for insulator in insulators %}
-        <a href="{% url 'insulator_detail' insulator.id %}?search={{ search|urlencode }}" class="card-link">
+        <a href="{% url 'insulator_detail' insulator.id %}?query={{ query|urlencode }}" class="card-link">
             <div class="card-container">
                 <!-- Картинка -->
                 <div class="card-image-container">
