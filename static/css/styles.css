@@ -437,7 +437,7 @@ form {
 
 input[type="text"] {
     padding: 8px 12px;
-    width: 1px; /* Убираем фиксированную ширину */
+    width: 100px; /* Убираем фиксированную ширину */
    /* Ограничиваем ширину контейнером */
     border: 1px solid transparent;
     border-radius: 20px;

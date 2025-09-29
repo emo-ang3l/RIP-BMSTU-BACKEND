@@ -11,6 +11,11 @@
     <p>Требуемое тепловое сопротивление: {{ request.required_r_value }} м²·°C/Вт</p>
     <h2>Утеплители в заявке:</h2>
     
+    <form method="post" action="{% url 'delete_request' request.id %}">
+        {% csrf_token %}
+        <button type="submit">Удалить заявку</button>
+    </form>
+
     <div class="request-list-container">
         {% for ins in insulators %}
             <div class="request-tile-wrapper">
@@ -24,7 +29,7 @@
                         <p>Теплопроводность: {{ ins.thermal_conductivity }} Вт/м·К</p>
                         <div class="mm-group">
                             <label>Комментарий:</label>
-                            <input type="text-detail" value="{{ ins.comment|default:'' }}" class="comment-input">
+                            <input type="text" value="{{ ins.comment|default:'' }}" class="comment-input">
                         </div>
                         <div class="mm-group">
                             <label>Результат (толщина):</label>
@@ -34,6 +39,8 @@
                     </div>
                 </div>
             </div>
+        {% empty %}
+            <p>Нет утеплителей в заявке</p>
         {% endfor %}
     </div>
 {% endblock %}

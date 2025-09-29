@@ -11,12 +11,16 @@
             </div>
             <div class="tile-content-detail">
                 <h2>{{ insulator.name }}</h2>
-                <p>{% if insulator.availability %}В наличии{% else %}Нет в наличии{% endif %}</p>
+                <p>{% if insulator.is_active %}В наличии{% else %}Нет в наличии{% endif %}</p>
                 <p>Теплопроводность: {{ insulator.thermal_conductivity }} Вт/м·К</p>
                 <p>Цена: {{ insulator.price_per_m2 }} Р</p>
                 <p>Плотность: {{ insulator.density }} кг/м³</p>
                 <p>Класс огнестойкости: {{ insulator.fire_rating }}</p>
                 <p>Описание: {{ insulator.description }}</p>
+                <form method="post" action="{% url 'add_insulator_to_request' insulator.id %}">
+                    {% csrf_token %}
+                    <button type="submit">Добавить в заявку</button>
+                </form>
             </div>
         </div>
     </div>

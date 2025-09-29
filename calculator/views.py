@@ -1,132 +1,103 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import Http404
+from django.db import connection
+from django.contrib.auth.decorators import login_required
+from .models import Insulator, Request, RequestInsulator
+from django.db.models import Q
 
 MINIO_URL = 'http://localhost:9000/insulation-image/'
 
-INSULATORS = [
-    {
-        'id': 1,
-        'name': 'Плиты теплозвук- оизоляционные 34',
-        'thermal_conductivity': 0.035,
-        'price_per_m2': 579,
-        'density': 25.0,
-        'fire_rating': 'B2',
-        'description': 'Лёгкий вспененный утеплитель для стен и крыш.',
-        'image_key': 'polystyrene.jpg',
-        'availability': True
-    },
-    {
-        'id': 2,
-        'name': 'Плиты теплозвук- оизоляционные 37PN',
-        'thermal_conductivity': 0.040,
-        'price_per_m2': 150,
-        'density': 100.0,
-        'fire_rating': 'A1',
-        'description': 'Волокнистый утеплитель на основе базальта.',
-        'image_key': 'mineralwool.jpg',
-        'availability': True
-    },
-    {
-        'id': 3,
-        'name': 'Мат теплоизол- яционный 40RN',
-        'thermal_conductivity': 0.022,
-        'price_per_m2': 300,
-        'density': 35.0,
-        'fire_rating': 'B1',
-        'description': 'Пенополиизоциануратные панели с низкой теплопроводностью.',
-        'image_key': 'pir.jpg',
-        'availability': False
-    },
-    {
-        'id': 4,
-        'name': 'Мат теплоизо- ляционный 45RN',
-        'thermal_conductivity': 0.022,
-        'price_per_m2': 300,
-        'density': 35.0,
-        'fire_rating': 'B1',
-        'description': 'Пенополиизоциануратные панели с низкой теплопроводностью.',
-        'image_key': 'pir2.jpg',
-        'availability': False
-    },
-    {
-        'id': 5,
-        'name': 'Мат теплоизо- ляционный 45RN',
-        'thermal_conductivity': 0.022,
-        'price_per_m2': 300,
-        'density': 35.0,
-        'fire_rating': 'B1',
-        'description': 'Пенополиизоциануратные панели с низкой теплопроводностью.',
-        'image_key': 'pir2.jpg',
-        'availability': False
-    },
-]
-
-CURRENT_REQUESTS = [
-    {
-        'id': 1,
-        'climate_zone': 'Moscow Region',
-        'required_r_value': 3.5,
-        'wall_type': 'Brick',
-        'norm_standard': 'SNiP 23-02-2003',
-        'insulators_in_request': [
-            {'insulator_id': 1, 'comment': 'Для внешней стены', 'quantity': 1, 'order': 1, 'is_main': True},
-            {'insulator_id': 2, 'comment': 'Для крыши', 'quantity': 1, 'order': 2, 'is_main': False},
-            {'insulator_id': 3, 'comment': 'Для крыши', 'quantity': 1, 'order': 3, 'is_main': False},
-            {'insulator_id': 4, 'comment': 'Для крыши', 'quantity': 1, 'order': 4, 'is_main': False},
-            {'insulator_id': 5, 'comment': 'Для крыши', 'quantity': 1, 'order': 5, 'is_main': False},
-        ]
-    }
-]
-
+@login_required
 def insulators_list(request):
     query = request.GET.get('query', '')
-    filtered_insulators = [
-        i for i in INSULATORS
-        if query.lower() in i['name'].lower() or query == str(i['thermal_conductivity']) or query == str(i['price_per_m2'])
-    ]
-    # Use the first request's insulators count for consistency, or adjust as needed
-    request_count = len(CURRENT_REQUESTS[0]['insulators_in_request']) if CURRENT_REQUESTS else 0
+    draft_request = Request.objects.filter(client=request.user, status=Request.Status.DRAFT).first()
+    request_count = RequestInsulator.objects.filter(request=draft_request).count() if draft_request else 0
+    insulators = Insulator.objects.filter(
+        is_active=True
+    ).filter(
+        Q(name__icontains=query)  # Только поиск по имени
+    )
     return render(request, 'calculator/insulators_list.html', {
-        'insulators': filtered_insulators,
+        'insulators': insulators,
         'request_count': request_count,
         'query': query,
         'minio_url': MINIO_URL,
-        'current_request_id': CURRENT_REQUESTS[0]['id'] if CURRENT_REQUESTS else None
+        'current_request_id': draft_request.id if draft_request else None
     })
 
+@login_required
 def insulator_detail(request, id):
-    insulator = next((i for i in INSULATORS if i['id'] == id), None)
+    insulator = Insulator.objects.filter(id=id, is_active=True).first()
     if not insulator:
         raise Http404("Утеплитель не найден")
     query = request.GET.get('query', '')
-    # Use the first request's insulators count for consistency, or adjust as needed
-    request_count = len(CURRENT_REQUESTS[0]['insulators_in_request']) if CURRENT_REQUESTS else 0
+    draft_request = Request.objects.filter(client=request.user, status=Request.Status.DRAFT).first()
+    request_count = RequestInsulator.objects.filter(request=draft_request).count() if draft_request else 0
     return render(request, 'calculator/insulator_detail.html', {
         'insulator': insulator,
         'minio_url': MINIO_URL,
-        'current_request_id': CURRENT_REQUESTS[0]['id'] if CURRENT_REQUESTS else None,
+        'current_request_id': draft_request.id if draft_request else None,
         'request_count': request_count,
         'query': query
     })
 
+@login_required
 def request_detail(request, id):
-    request_data = next((r for r in CURRENT_REQUESTS if r['id'] == id), None)
+    request_data = Request.objects.filter(id=id, client=request.user, status__in=[Request.Status.DRAFT, Request.Status.FORMED, Request.Status.COMPLETED]).first()
     if not request_data:
         raise Http404("Заявка не найдена")
     insulators = []
-    for mm in request_data['insulators_in_request']:
-        insulator = next((i for i in INSULATORS if i['id'] == mm['insulator_id']), None)
-        if insulator:
-            mm['calculated_thickness'] = round(request_data['required_r_value'] * insulator['thermal_conductivity'] * 1000)
-            insulators.append({**insulator, **mm})
-
+    for mm in RequestInsulator.objects.filter(request=request_data).order_by('order'):
+        insulator = Insulator.objects.get(id=mm.insulator_id)
+        mm.calculated_thickness = round(request_data.required_r_value * insulator.thermal_conductivity * 1000)
+        mm.save()
+        insulators.append({**insulator.__dict__, **mm.__dict__})
     query = request.GET.get('query', '')
-    request_count = len(request_data['insulators_in_request'])
+    request_count = RequestInsulator.objects.filter(request=request_data).count()
     return render(request, 'calculator/request_detail.html', {
         'request': request_data,
         'insulators': insulators,
         'minio_url': MINIO_URL,
-        'current_request_id': request_data['id'],
+        'current_request_id': request_data.id,
         'request_count': request_count,
         'query': query
     })
+
+@login_required
+def add_insulator_to_request(request, insulator_id):
+    if request.method != 'POST':
+        return redirect('insulators_list')
+    insulator = Insulator.objects.filter(id=insulator_id, is_active=True).first()
+    if not insulator:
+        raise Http404("Утеплитель не найден")
+    draft_request = Request.objects.filter(client=request.user, status=Request.Status.DRAFT).first()
+    if not draft_request:
+        draft_request = Request.objects.create(
+            client=request.user,
+            climate_zone='Unknown',
+            required_r_value=0.0,
+            wall_type='Unknown',
+            norm_standard='Unknown'
+        )
+    # Проверка на существование записи
+    if not RequestInsulator.objects.filter(request=draft_request, insulator=insulator).exists():
+        order = RequestInsulator.objects.filter(request=draft_request).count() + 1
+        RequestInsulator.objects.create(
+            request=draft_request,
+            insulator=insulator,
+            quantity=1,
+            order=order,
+            is_main=(order == 1),
+            comment='Добавлено автоматически'
+        )
+    return redirect('request_detail', id=draft_request.id)
+
+@login_required
+def delete_request(request, id):
+    if request.method != 'POST':
+        return redirect('insulators_list')
+    with connection.cursor() as cursor:
+        cursor.execute("UPDATE calculator_request SET status = %s WHERE id = %s AND client_id = %s", 
+                       [Request.Status.DELETED, id, request.user.id])
+    return redirect('insulators_list')
+
