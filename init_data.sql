@@ -1,5 +1,5 @@
 -- Insulator
-INSERT INTO calculator_insulator (id, name, description, is_active, image_key, thermal_conductivity, price_per_m2, density, fire_rating) VALUES
+INSERT INTO calculator_insulator (id, insulator_name, description, is_active, image_key, thermal_conductivity, price_per_m2, density, fire_rating) VALUES
 (1, 'Плиты теплозвук- оизоляционные 34', 'Лёгкий вспененный утеплитель для стен и крыш.', TRUE, 'polystyrene.jpg', 0.035, 579.00, 25.0, 'B2'),
 (2, 'Плиты теплозвук- оизоляционные 37PN', 'Волокнистый утеплитель на основе базальта.', TRUE, 'mineralwool.jpg', 0.040, 150.00, 100.0, 'A1'),
 (3, 'Мат теплоизол- яционный 40RN', 'Пенополиизоциануратные панели с низкой теплопроводностью.', FALSE, 'pir.jpg', 0.022, 300.00, 35.0, 'B1'),

@@ -2,8 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class Insulator(models.Model):
-    name = models.CharField(max_length=255)
-    description = models.TextField()
+    insulator_name = models.CharField(max_length=255)
+    insulator_description = models.TextField()
     is_active = models.BooleanField(default=True)
     image_key = models.CharField(max_length=255, null=True, blank=True)
     thermal_conductivity = models.FloatField()
@@ -12,7 +12,7 @@ class Insulator(models.Model):
     fire_rating = models.CharField(max_length=10)
 
     def __str__(self):
-        return self.name
+        return self.insulator_name
 
 class Request(models.Model):
     class Status(models.TextChoices):
@@ -22,7 +22,7 @@ class Request(models.Model):
         COMPLETED = 'COMPLETED', 'Завершён'
         REJECTED = 'REJECTED', 'Отклонён'
 
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    status_request = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     creation_datetime = models.DateTimeField(auto_now_add=True)
     formation_datetime = models.DateTimeField(null=True, blank=True)
     completion_datetime = models.DateTimeField(null=True, blank=True)
@@ -43,7 +43,7 @@ class RequestInsulator(models.Model):
     quantity = models.IntegerField()
     order = models.IntegerField()
     is_main = models.BooleanField(default=False)
-    comment = models.TextField(null=True, blank=True)
+    user_comment = models.TextField(null=True, blank=True)
     calculated_thickness = models.FloatField(null=True, blank=True)
 
     def __str__(self):

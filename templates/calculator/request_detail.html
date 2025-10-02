@@ -22,14 +22,14 @@
                 <div class="tile-order">{{ forloop.counter }}</div>
                 <div class="request-tile">
                     <div class="tile-image">
-                        <img src="{{ minio_url }}{{ ins.image_key }}" alt="{{ ins.name }}">
+                        <img src="{{ minio_url }}{{ ins.image_key }}" alt="{{ ins.insulator_name }}">
                     </div>
                     <div class="tile-content">
-                        <h3>{{ ins.name }}</h3>
+                        <h3>{{ ins.insulator_name }}</h3>
                         <p>Теплопроводность: {{ ins.thermal_conductivity }} Вт/м·К</p>
                         <div class="mm-group">
                             <label>Комментарий:</label>
-                            <input type="text" value="{{ ins.comment|default:'' }}" class="comment-input">
+                            <input type="text" value="{{ ins.user_comment|default:'' }}" class="comment-input">
                         </div>
                         <div class="mm-group">
                             <label>Результат (толщина):</label>

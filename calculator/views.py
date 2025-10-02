@@ -10,12 +10,12 @@ MINIO_URL = 'http://localhost:9000/insulation-image/'
 @login_required
 def insulators_list(request):
     query = request.GET.get('query', '')
-    draft_request = Request.objects.filter(client=request.user, status=Request.Status.DRAFT).first()
+    draft_request = Request.objects.filter(client=request.user, status_request=Request.Status.DRAFT).first()
     request_count = RequestInsulator.objects.filter(request=draft_request).count() if draft_request else 0
     insulators = Insulator.objects.filter(
         is_active=True
     ).filter(
-        Q(name__icontains=query)  # Только поиск по имени
+        Q(insulator_name__icontains=query)  # Только поиск по имени
     )
     return render(request, 'calculator/insulators_list.html', {
         'insulators': insulators,
@@ -31,7 +31,7 @@ def insulator_detail(request, id):
     if not insulator:
         raise Http404("Утеплитель не найден")
     query = request.GET.get('query', '')
-    draft_request = Request.objects.filter(client=request.user, status=Request.Status.DRAFT).first()
+    draft_request = Request.objects.filter(client=request.user, status_request=Request.Status.DRAFT).first()
     request_count = RequestInsulator.objects.filter(request=draft_request).count() if draft_request else 0
     return render(request, 'calculator/insulator_detail.html', {
         'insulator': insulator,
@@ -43,7 +43,7 @@ def insulator_detail(request, id):
 
 @login_required
 def request_detail(request, id):
-    request_data = Request.objects.filter(id=id, client=request.user, status__in=[Request.Status.DRAFT, Request.Status.FORMED, Request.Status.COMPLETED]).first()
+    request_data = Request.objects.filter(id=id, client=request.user, status_request__in=[Request.Status.DRAFT, Request.Status.FORMED, Request.Status.COMPLETED]).first()
     if not request_data:
         raise Http404("Заявка не найдена")
     insulators = []
@@ -70,7 +70,7 @@ def add_insulator_to_request(request, insulator_id):
     insulator = Insulator.objects.filter(id=insulator_id, is_active=True).first()
     if not insulator:
         raise Http404("Утеплитель не найден")
-    draft_request = Request.objects.filter(client=request.user, status=Request.Status.DRAFT).first()
+    draft_request = Request.objects.filter(client=request.user, status_request=Request.Status.DRAFT).first()
     if not draft_request:
         draft_request = Request.objects.create(
             client=request.user,
@@ -88,7 +88,7 @@ def add_insulator_to_request(request, insulator_id):
             quantity=1,
             order=order,
             is_main=(order == 1),
-            comment='Добавлено автоматически'
+            user_comment='Добавлено автоматически'
         )
     return redirect('request_detail', id=draft_request.id)
 
@@ -97,7 +97,6 @@ def delete_request(request, id):
     if request.method != 'POST':
         return redirect('insulators_list')
     with connection.cursor() as cursor:
-        cursor.execute("UPDATE calculator_request SET status = %s WHERE id = %s AND client_id = %s", 
+        cursor.execute("UPDATE calculator_request SET status_request = %s WHERE id = %s AND client_id = %s", 
                        [Request.Status.DELETED, id, request.user.id])
     return redirect('insulators_list')
-

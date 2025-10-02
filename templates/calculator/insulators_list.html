@@ -14,7 +14,7 @@
         <a href="{% url 'insulator_detail' insulator.id %}?query={{ query|urlencode }}" class="card-link">
             <div class="card-container">
                 <div class="card-image-container">
-                    <img src="{{ minio_url }}{{ insulator.image_key }}" alt="{{ insulator.name }}" class="card-image">
+                    <img src="{{ minio_url }}{{ insulator.image_key }}" alt="{{ insulator.insulator_name }}" class="card-image">
                 </div>
                 <div class="card-body-container">
                     <div class="card-presence-container">
@@ -23,7 +23,7 @@
                         </p>
                     </div>
                     <div class="card-text-container">
-                        <p class="card-body-text">{{ insulator.name }}</p>
+                        <p class="card-body-text">{{ insulator.insulator_name }}</p>
                         <div class="card-price-container">
                             <p class="card-price-text">{{ insulator.thermal_conductivity }} Вт/м·К</p>
                             <div class="card-count-container">
