@@ -1,17 +1,17 @@
 {% extends 'calculator/base.html' %}
 {% load static %}
 
-{% block title %}Заявка №{{ request.id }}{% endblock %}
+{% block title %}Заявка №{{ insulator_request.id }}{% endblock %}
 
 {% block content %}
-    <h1>Заявка №{{ request.id }}</h1>
-    <p>Климатическая зона: {{ request.climate_zone }}</p>
-    <p>Тип стены: {{ request.wall_type }}</p>
-    <p>Норматив: {{ request.norm_standard }}</p>
-    <p>Требуемое тепловое сопротивление: {{ request.required_r_value }} м²·°C/Вт</p>
+    <h1>Заявка №{{ insulator_request.id }}</h1>
+    <p>Климатическая зона: {{ insulator_request.climate_zone }}</p>
+    <p>Тип стены: {{ insulator_request.wall_type }}</p>
+    <p>Норматив: {{ insulator_request.norm_standard }}</p>
+    <p>Требуемое тепловое сопротивление: {{ insulator_request.required_r_value }} м²·°C/Вт</p>
     <h2>Утеплители в заявке:</h2>
     
-    <form method="post" action="{% url 'delete_request' request.id %}">
+    <form method="post" action="{% url 'delete_request' insulator_request.id %}">
         {% csrf_token %}
         <button type="submit">Удалить заявку</button>
     </form>

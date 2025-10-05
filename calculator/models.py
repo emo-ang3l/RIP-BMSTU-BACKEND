@@ -38,8 +38,8 @@ class InsulatorRequest(models.Model):
         return f"Заявка №{self.id}"
         
 class DetailRequestInsulator(models.Model):
-    request = models.ForeignKey(InsulatorRequest, on_delete=models.CASCADE)  # Изменено на CASCADE
-    insulator = models.ForeignKey(Insulator, on_delete=models.CASCADE)  # Для согласованности
+    detail_request = models.ForeignKey(InsulatorRequest, on_delete=models.CASCADE)
+    insulator = models.ForeignKey(Insulator, on_delete=models.CASCADE)
     quantity = models.IntegerField()
     order = models.IntegerField()
     is_main = models.BooleanField(default=False)
@@ -47,7 +47,7 @@ class DetailRequestInsulator(models.Model):
     calculated_thickness = models.FloatField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.request_id}-{self.insulator_id}"
+        return f"{self.detail_request_id}-{self.insulator_id}"
 
     class Meta:
-        unique_together = ('request', 'insulator')
+        unique_together = ('detail_request', 'insulator')

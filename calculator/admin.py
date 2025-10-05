@@ -13,4 +13,4 @@ class RequestAdmin(admin.ModelAdmin):
 
 @admin.register(DetailRequestInsulator)
 class RequestInsulatorAdmin(admin.ModelAdmin):
-    list_display = ('request', 'insulator', 'quantity', 'order', 'is_main')
+    list_display = ('detail_request', 'insulator', 'quantity', 'order', 'is_main')

@@ -8,16 +8,16 @@ from django.db.models import Q
 MINIO_URL = 'http://localhost:9000/insulation-image/'
 
 @login_required
-def insulators_list(request):
-    query = request.GET.get('query', '')
-    draft_request = InsulatorRequest.objects.filter(client=request.user, status_request=InsulatorRequest.Status.DRAFT).first()
-    request_count = DetailRequestInsulator.objects.filter(request=draft_request).count() if draft_request else 0
+def insulators_list(detail_request):
+    query = detail_request.GET.get('query', '')
+    draft_request = InsulatorRequest.objects.filter(client=detail_request.user, status_request=InsulatorRequest.Status.DRAFT).first()
+    request_count = DetailRequestInsulator.objects.filter(detail_request=draft_request).count() if draft_request else 0
     insulators = Insulator.objects.filter(
         is_active=True
     ).filter(
         Q(insulator_name__icontains=query)  # Только поиск по имени
     )
-    return render(request, 'calculator/insulators_list.html', {
+    return render(detail_request, 'calculator/insulators_list.html', {
         'insulators': insulators,
         'request_count': request_count,
         'query': query,
@@ -26,14 +26,14 @@ def insulators_list(request):
     })
 
 @login_required
-def insulator_detail(request, id):
+def insulator_detail(detail_request, id):
     insulator = Insulator.objects.filter(id=id, is_active=True).first()
     if not insulator:
         raise Http404("Утеплитель не найден")
-    query = request.GET.get('query', '')
-    draft_request = InsulatorRequest.objects.filter(client=request.user, status_request=InsulatorRequest.Status.DRAFT).first()
-    request_count = DetailRequestInsulator.objects.filter(request=draft_request).count() if draft_request else 0
-    return render(request, 'calculator/insulator_detail.html', {
+    query = detail_request.GET.get('query', '')
+    draft_request = InsulatorRequest.objects.filter(client=detail_request.user, status_request=InsulatorRequest.Status.DRAFT).first()
+    request_count = DetailRequestInsulator.objects.filter(detail_request=draft_request).count() if draft_request else 0
+    return render(detail_request, 'calculator/insulator_detail.html', {
         'insulator': insulator,
         'minio_url': MINIO_URL,
         'current_request_id': draft_request.id if draft_request else None,
@@ -42,20 +42,34 @@ def insulator_detail(request, id):
     })
 
 @login_required
-def request_detail(request, id):
-    request_data = InsulatorRequest.objects.filter(id=id, client=request.user, status_request__in=[InsulatorRequest.Status.DRAFT, InsulatorRequest.Status.FORMED, InsulatorRequest.Status.COMPLETED]).first()
+def request_detail(detail_request, id):
+    # Проверяем, существует ли заявка и не является ли она удалённой
+    request_data = InsulatorRequest.objects.filter(
+        id=id,
+        client=detail_request.user,
+        status_request__in=[
+            InsulatorRequest.Status.DRAFT,
+            InsulatorRequest.Status.FORMED,
+            InsulatorRequest.Status.COMPLETED
+        ]
+    ).first()
+    
+    # Если заявка не найдена или имеет статус DELETED, вызываем ошибку 404
     if not request_data:
+        if InsulatorRequest.objects.filter(id=id, status_request=InsulatorRequest.Status.DELETED).exists():
+            raise Http404("Заявка была удалена")
         raise Http404("Заявка не найдена")
+    
     insulators = []
-    for mm in DetailRequestInsulator.objects.filter(request=request_data).order_by('order'):
+    for mm in DetailRequestInsulator.objects.filter(detail_request=request_data).order_by('order'):
         insulator = Insulator.objects.get(id=mm.insulator_id)
         mm.calculated_thickness = round(request_data.required_r_value * insulator.thermal_conductivity * 1000)
         mm.save()
         insulators.append({**insulator.__dict__, **mm.__dict__})
-    query = request.GET.get('query', '')
-    request_count = DetailRequestInsulator.objects.filter(request=request_data).count()
-    return render(request, 'calculator/request_detail.html', {
-        'request': request_data,
+    query = detail_request.GET.get('query', '')
+    request_count = DetailRequestInsulator.objects.filter(detail_request=request_data).count()
+    return render(detail_request, 'calculator/request_detail.html', {
+        'insulator_request': request_data,  # Используем insulator_request, чтобы избежать конфликта
         'insulators': insulators,
         'minio_url': MINIO_URL,
         'current_request_id': request_data.id,
@@ -64,26 +78,26 @@ def request_detail(request, id):
     })
 
 @login_required
-def add_insulator_to_request(request, insulator_id):
-    if request.method != 'POST':
+def add_insulator_to_request(detail_request, insulator_id):
+    if detail_request.method != 'POST':
         return redirect('insulators_list')
     insulator = Insulator.objects.filter(id=insulator_id, is_active=True).first()
     if not insulator:
         raise Http404("Утеплитель не найден")
-    draft_request = InsulatorRequest.objects.filter(client=request.user, status_request=InsulatorRequest.Status.DRAFT).first()
+    draft_request = InsulatorRequest.objects.filter(client=detail_request.user, status_request=InsulatorRequest.Status.DRAFT).first()
     if not draft_request:
         draft_request = InsulatorRequest.objects.create(
-            client=request.user,
+            client=detail_request.user,
             climate_zone='Unknown',
             required_r_value=0.0,
             wall_type='Unknown',
             norm_standard='Unknown'
         )
     # Проверка на существование записи
-    if not DetailRequestInsulator.objects.filter(request=draft_request, insulator=insulator).exists():
-        order = DetailRequestInsulator.objects.filter(request=draft_request).count() + 1
+    if not DetailRequestInsulator.objects.filter(detail_request=draft_request, insulator=insulator).exists():
+        order = DetailRequestInsulator.objects.filter(detail_request=draft_request).count() + 1
         DetailRequestInsulator.objects.create(
-            request=draft_request,
+            detail_request=draft_request,
             insulator=insulator,
             quantity=1,
             order=order,
@@ -93,10 +107,10 @@ def add_insulator_to_request(request, insulator_id):
     return redirect('request_detail', id=draft_request.id)
 
 @login_required
-def delete_request(request, id):
-    if request.method != 'POST':
+def delete_request(detail_request, id):
+    if detail_request.method != 'POST':
         return redirect('insulators_list')
     with connection.cursor() as cursor:
         cursor.execute("UPDATE calculator_insulatorrequest SET status_request = %s WHERE id = %s AND client_id = %s", 
-                       [InsulatorRequest.Status.DELETED, id, request.user.id])
+                       [InsulatorRequest.Status.DELETED, id, detail_request.user.id])
     return redirect('insulators_list')
