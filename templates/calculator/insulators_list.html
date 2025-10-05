@@ -7,6 +7,19 @@
 <form method="get">
     <input type="text" name="query" value="{{ query }}" placeholder="Поиск">
     <button type="submit">Поиск</button>
+    {% if current_request_id %}
+
+<div class="cart-container">
+    <a href="{% url 'request_detail' current_request_id %}" class="cart-link">
+        <div class="cart-image-wrapper">
+            <img src="{% static 'assets/photo/cart.png' %}" alt="Корзина" class="cart-image">
+            {% if request_count > 0 %}
+                <span class="cart-count-badge">{{ request_count }}</span>
+            {% endif %}
+        </div>
+    </a>
+</div>
+{% endif %}
 </form>
 
 <div class="list-container">
@@ -39,16 +52,5 @@
     {% endfor %}
 </div>
 
-{% if current_request_id %}
-<div class="cart-container">
-    <a href="{% url 'request_detail' current_request_id %}" class="cart-link">
-        <div class="cart-image-wrapper">
-            <img src="{% static 'assets/photo/cart.jpg' %}" alt="Корзина" class="cart-image">
-            {% if request_count > 0 %}
-                <span class="cart-count-badge">{{ request_count }}</span>
-            {% endif %}
-        </div>
-    </a>
-</div>
-{% endif %}
+
 {% endblock %}
