@@ -14,7 +14,7 @@ class Insulator(models.Model):
     def __str__(self):
         return self.insulator_name
 
-class Request(models.Model):
+class InsulatorRequest(models.Model):
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', 'Черновик'
         DELETED = 'DELETED', 'Удалён'
@@ -37,8 +37,8 @@ class Request(models.Model):
     def __str__(self):
         return f"Заявка №{self.id}"
         
-class RequestInsulator(models.Model):
-    request = models.ForeignKey(Request, on_delete=models.CASCADE)  # Изменено на CASCADE
+class DetailRequestInsulator(models.Model):
+    request = models.ForeignKey(InsulatorRequest, on_delete=models.CASCADE)  # Изменено на CASCADE
     insulator = models.ForeignKey(Insulator, on_delete=models.CASCADE)  # Для согласованности
     quantity = models.IntegerField()
     order = models.IntegerField()
