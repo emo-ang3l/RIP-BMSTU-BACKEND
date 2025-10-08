@@ -28,20 +28,20 @@ class InsulatorRequest(models.Model):
     completion_datetime = models.DateTimeField(null=True, blank=True)
     client = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='created_requests')
     manager = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='managed_requests', null=True, blank=True)
-    climate_zone = models.CharField(max_length=100)
-    required_r_value = models.FloatField()
-    wall_type = models.CharField(max_length=50)
-    norm_standard = models.CharField(max_length=50)
+    climate_zone = models.CharField(max_length=100, default='Unknown')
+    required_r_value = models.FloatField(default=0.0)
+    wall_type = models.CharField(max_length=50, default='Unknown')
+    norm_standard = models.CharField(max_length=50, default='Unknown')
     total_thickness = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return f"Заявка №{self.id}"
-        
+
 class DetailRequestInsulator(models.Model):
     detail_request = models.ForeignKey(InsulatorRequest, on_delete=models.CASCADE)
     insulator = models.ForeignKey(Insulator, on_delete=models.CASCADE)
-    quantity = models.IntegerField()
-    order = models.IntegerField()
+    quantity = models.IntegerField(default=1)
+    order = models.IntegerField(default=1)
     is_main = models.BooleanField(default=False)
     user_comment = models.TextField(null=True, blank=True)
     calculated_thickness = models.FloatField(null=True, blank=True)

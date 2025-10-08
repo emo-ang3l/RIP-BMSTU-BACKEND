@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from calculator import views
 
 urlpatterns = [
@@ -9,5 +9,6 @@ urlpatterns = [
     path('basket/<int:id>/', views.request_detail, name='request_detail'),
     path('add_insulator/<int:insulator_id>/', views.add_insulator_to_request, name='add_insulator_to_request'),
     path('delete_request/<int:id>/', views.delete_request, name='delete_request'),
+    path('api/', include('calculator.api.urls')),
     
 ]
