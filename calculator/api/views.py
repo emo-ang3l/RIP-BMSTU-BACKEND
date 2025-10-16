@@ -11,7 +11,6 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
-from rest_framework.authtoken.models import Token
 
 from minio import Minio, S3Error
 
@@ -139,10 +138,10 @@ class InsulatorViewSet(viewsets.ModelViewSet):
         if not draft:
             draft = InsulatorRequest.objects.create(
                 client=user,
-                climate_zone='Unknown',
+                climate_zone='',
                 required_r_value=0.0,
-                wall_type='Unknown',
-                norm_standard='Unknown'
+                wall_type='',
+                norm_standard=''
             )
 
         existing = DetailRequestInsulator.objects.filter(detail_request=draft, insulator=insulator).exists()
@@ -162,8 +161,8 @@ class InsulatorViewSet(viewsets.ModelViewSet):
 
 class InsulatorRequestViewSet(viewsets.ModelViewSet):
     """
-    /api/requests/
-    GET list (фильтрация по статусу и диапазону даты формирования, без DELETED/DRAFT)
+    /api/insulatorrequests/
+    GET list (с фильтрацией по статусу и диапазону даты формирования, все статусы)
     GET /{id}/ retrieve (с услугами и картинками)
     PUT /{id}/ update (изменение полей заявки)
     DELETE /{id}/ destroy (только DRAFT -> DELETED)
@@ -180,7 +179,7 @@ class InsulatorRequestViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = get_creator_user()
-        qs = InsulatorRequest.objects.filter(client=user)
+        qs = InsulatorRequest.objects.filter(client=user)  # Убрана проверка на DRAFT и DELETED
         status_filter = self.request.query_params.get('status')
         if status_filter:
             qs = qs.filter(status_request=status_filter)
@@ -232,8 +231,7 @@ class InsulatorRequestViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         if instance.status_request != InsulatorRequest.Status.DRAFT:
             return Response({"detail": "Only draft can be formed"}, status=status.HTTP_400_BAD_REQUEST)
-        if not all([instance.climate_zone != 'Unknown', instance.required_r_value > 0,
-                    instance.wall_type != 'Unknown', instance.norm_standard != 'Unknown']):
+        if not all([instance.climate_zone, instance.required_r_value > 0, instance.wall_type, instance.norm_standard]):
             return Response({"detail": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
         instance.status_request = InsulatorRequest.Status.FORMED
         instance.formation_datetime = datetime.now()
@@ -333,8 +331,7 @@ def auth_login(request):
     user = authenticate(username=serializer.validated_data['username'], password=serializer.validated_data['password'])
     if user:
         login(request, user)
-        token, _ = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key})
+        return Response({"detail": "Logged in successfully"}, status=status.HTTP_200_OK)
     return Response({"detail": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])

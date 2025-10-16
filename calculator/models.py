@@ -28,10 +28,10 @@ class InsulatorRequest(models.Model):
     completion_datetime = models.DateTimeField(null=True, blank=True)
     client = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='created_requests')
     manager = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='managed_requests', null=True, blank=True)
-    climate_zone = models.CharField(max_length=100, default='Unknown')
+    climate_zone = models.CharField(max_length=100, default='')
     required_r_value = models.FloatField(default=0.0)
-    wall_type = models.CharField(max_length=50, default='Unknown')
-    norm_standard = models.CharField(max_length=50, default='Unknown')
+    wall_type = models.CharField(max_length=50, default='')
+    norm_standard = models.CharField(max_length=50, default='')
     total_thickness = models.FloatField(null=True, blank=True)
 
     def __str__(self):
