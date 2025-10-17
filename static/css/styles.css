@@ -109,11 +109,12 @@ header {
 .list-container {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
-    padding: 0px;
+    justify-content: flex-start;
+    gap: 30px;
+    padding: 10px;
     max-width: 1080px;
     margin: 0 auto;
+    flex-direction: row;
 }
 
 .card-container {
@@ -489,4 +490,16 @@ button {
     border: none;
     cursor: pointer;
     border-radius: 20px;
+}
+
+
+.error-container {
+    display: flex;
+    flex-wrap: nowrap;
+    align-content: center;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    margin: 12px;
 }

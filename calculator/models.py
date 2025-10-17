@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 class Insulator(models.Model):
     insulator_name = models.CharField(max_length=255)
     insulator_description = models.TextField()
-    is_active = models.BooleanField(default=True)
+    Insulator_active = models.BooleanField(default=True)
     image_key = models.CharField(max_length=255, null=True, blank=True)
     thermal_conductivity = models.FloatField()
     price_per_m2 = models.DecimalField(max_digits=10, decimal_places=2)
@@ -42,7 +42,7 @@ class DetailRequestInsulator(models.Model):
     insulator = models.ForeignKey(Insulator, on_delete=models.CASCADE)
     quantity = models.IntegerField()
     order = models.IntegerField()
-    is_main = models.BooleanField(default=False)
+    DetailRequestActive_active = models.BooleanField(default=False)
     user_comment = models.TextField(null=True, blank=True)
     calculated_thickness = models.FloatField(null=True, blank=True)
 

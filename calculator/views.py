@@ -13,7 +13,7 @@ def insulators_list(detail_request):
     draft_request = InsulatorRequest.objects.filter(client=detail_request.user, status_request=InsulatorRequest.Status.DRAFT).first()
     request_count = DetailRequestInsulator.objects.filter(detail_request=draft_request).count() if draft_request else 0
     insulators = Insulator.objects.filter(
-        is_active=True
+        Insulator_active=True
     ).filter(
         Q(insulator_name__icontains=query)  # Только поиск по имени
     )
@@ -27,9 +27,9 @@ def insulators_list(detail_request):
 
 @login_required
 def insulator_detail(detail_request, id):
-    insulator = Insulator.objects.filter(id=id, is_active=True).first()
+    insulator = Insulator.objects.filter(id=id, Insulator_active=True).first()
     if not insulator:
-        raise Http404("Утеплитель не найден")
+        return render(detail_request, '404.html', {'message': 'Утеплитель не найден'}, status=404)  # Рендер 404.html
     query = detail_request.GET.get('query', '')
     draft_request = InsulatorRequest.objects.filter(client=detail_request.user, status_request=InsulatorRequest.Status.DRAFT).first()
     request_count = DetailRequestInsulator.objects.filter(detail_request=draft_request).count() if draft_request else 0
@@ -54,11 +54,9 @@ def request_detail(detail_request, id):
         ]
     ).first()
     
-    # Если заявка не найдена или имеет статус DELETED, вызываем ошибку 404
+    # Если заявка не найдена или имеет статус DELETED, рендерим 404.html
     if not request_data:
-        if InsulatorRequest.objects.filter(id=id, status_request=InsulatorRequest.Status.DELETED).exists():
-            raise Http404("Заявка была удалена")
-        raise Http404("Заявка не найдена")
+        return render(detail_request, '404.html', {'message': 'Заявка не найдена или была удалена'}, status=404)
     
     insulators = []
     for mm in DetailRequestInsulator.objects.filter(detail_request=request_data).order_by('order'):
@@ -69,7 +67,7 @@ def request_detail(detail_request, id):
     query = detail_request.GET.get('query', '')
     request_count = DetailRequestInsulator.objects.filter(detail_request=request_data).count()
     return render(detail_request, 'calculator/request_detail.html', {
-        'insulator_request': request_data,  # Используем insulator_request, чтобы избежать конфликта
+        'insulator_request': request_data,
         'insulators': insulators,
         'minio_url': MINIO_URL,
         'current_request_id': request_data.id,
@@ -81,17 +79,17 @@ def request_detail(detail_request, id):
 def add_insulator_to_request(detail_request, insulator_id):
     if detail_request.method != 'POST':
         return redirect('insulators_list')
-    insulator = Insulator.objects.filter(id=insulator_id, is_active=True).first()
+    insulator = Insulator.objects.filter(id=insulator_id, Insulator_active=True).first()
     if not insulator:
-        raise Http404("Утеплитель не найден")
+        return render(detail_request, '404.html', {'message': 'Утеплитель не найден'}, status=404)  # Рендер 404.html
     draft_request = InsulatorRequest.objects.filter(client=detail_request.user, status_request=InsulatorRequest.Status.DRAFT).first()
     if not draft_request:
         draft_request = InsulatorRequest.objects.create(
             client=detail_request.user,
-            climate_zone='Unknown',
+            climate_zone='',
             required_r_value=0.0,
-            wall_type='Unknown',
-            norm_standard='Unknown'
+            wall_type='',
+            norm_standard=''
         )
     # Проверка на существование записи
     if not DetailRequestInsulator.objects.filter(detail_request=draft_request, insulator=insulator).exists():
@@ -101,7 +99,7 @@ def add_insulator_to_request(detail_request, insulator_id):
             insulator=insulator,
             quantity=1,
             order=order,
-            is_main=(order == 1),
+            DetailRequestActive_active=(order == 1),
             user_comment='Добавлено автоматически'
         )
     return redirect('request_detail', id=draft_request.id)
