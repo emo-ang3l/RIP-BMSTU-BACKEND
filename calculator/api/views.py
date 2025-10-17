@@ -57,7 +57,7 @@ def generate_image_name(original_filename):
 class InsulatorViewSet(viewsets.ModelViewSet):
     """
     /api/insulators/
-    GET list (с фильтрацией по имени и is_active)
+    GET list (с фильтрацией по имени и Insulator_active)
     POST create (без изображения)
     GET /{id}/ retrieve
     PUT /{id}/ update
@@ -74,7 +74,7 @@ class InsulatorViewSet(viewsets.ModelViewSet):
         qs = Insulator.objects.all()
         only_active = self.request.query_params.get('only_active')
         if only_active in ('1', 'true', 'True'):
-            qs = qs.filter(is_active=True)
+            qs = qs.filter(Insulator_active=True)
         q = self.request.query_params.get('q')
         if q:
             qs = qs.filter(insulator_name__icontains=q)
@@ -154,7 +154,7 @@ class InsulatorViewSet(viewsets.ModelViewSet):
             insulator=insulator,
             quantity=1,
             order=order,
-            is_main=(order == 1),
+            DetailRequestActive=(order == 1),
             user_comment='Добавлено через API'
         )
         return Response({"detail": "Added to draft", "request_id": draft.id}, status=status.HTTP_201_CREATED)
@@ -281,7 +281,7 @@ class InsulatorRequestViewSet(viewsets.ModelViewSet):
             details = DetailRequestInsulator.objects.filter(detail_request=instance).order_by('order')
             for i, d in enumerate(details, 1):
                 d.order = i
-                d.is_main = (i == 1)
+                d.DetailRequestActive = (i == 1)
                 d.save()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except DetailRequestInsulator.DoesNotExist:

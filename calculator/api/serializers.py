@@ -7,7 +7,7 @@ class InsulatorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Insulator
-        fields = ('id', 'insulator_name', 'insulator_description', 'is_active',
+        fields = ('id', 'insulator_name', 'insulator_description', 'Insulator_active',
                   'image_key', 'image_url', 'thermal_conductivity', 'price_per_m2',
                   'density', 'fire_rating')
         read_only_fields = ('id', 'image_key', 'image_url')
@@ -50,7 +50,7 @@ class DetailRequestInsulatorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DetailRequestInsulator
-        fields = ('insulator', 'quantity', 'order', 'is_main', 'user_comment', 'calculated_thickness')
+        fields = ('insulator', 'quantity', 'order', 'DetailRequestActive', 'user_comment', 'calculated_thickness')
         read_only_fields = ('calculated_thickness',)
 
 class UserSerializer(serializers.ModelSerializer):

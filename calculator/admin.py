@@ -3,7 +3,7 @@ from .models import Insulator, InsulatorRequest, DetailRequestInsulator
 
 @admin.register(Insulator)
 class InsulatorAdmin(admin.ModelAdmin):
-    list_display = ('insulator_name', 'is_active', 'thermal_conductivity', 'price_per_m2')
+    list_display = ('insulator_name', 'Insulator_active', 'thermal_conductivity', 'price_per_m2')
     search_fields = ('insulator_name',)
 
 @admin.register(InsulatorRequest)
@@ -13,4 +13,4 @@ class RequestAdmin(admin.ModelAdmin):
 
 @admin.register(DetailRequestInsulator)
 class RequestInsulatorAdmin(admin.ModelAdmin):
-    list_display = ('detail_request', 'insulator', 'quantity', 'order', 'is_main')
+    list_display = ('detail_request', 'insulator', 'quantity', 'order', 'DetailRequestActive')
