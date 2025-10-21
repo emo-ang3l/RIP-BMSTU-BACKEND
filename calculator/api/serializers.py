@@ -1,3 +1,4 @@
+# calculator/api/serializers.py
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from calculator.models import Insulator, InsulatorRequest, DetailRequestInsulator
@@ -56,7 +57,7 @@ class DetailRequestInsulatorSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name')
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'is_staff')
         read_only_fields = ('id',)
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -64,15 +65,16 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('username', 'password', 'email', 'first_name', 'last_name')
+        fields = ('username', 'password', 'email', 'first_name', 'last_name', 'is_staff')
 
     def create(self, validated_data):
         user = User.objects.create_user(
             username=validated_data['username'],
             password=validated_data['password'],
-            email=validated_data.get('email'),
-            first_name=validated_data.get('first_name'),
-            last_name=validated_data.get('last_name')
+            email=validated_data.get('email', ''),
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
+            is_staff=validated_data.get('is_staff', False)
         )
         return user
 

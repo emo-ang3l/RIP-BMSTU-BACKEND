@@ -2,22 +2,28 @@ import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+
 from django.conf import settings
 from django.utils.text import slugify
 from django.contrib.auth import authenticate, login, logout
-from django.db.models import Q, Sum
+from django.db.models import Sum
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import BasePermission, SAFE_METHODS, IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
+from rest_framework_simplejwt.tokens import RefreshToken
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 from minio import Minio, S3Error
 
 from calculator.models import Insulator, InsulatorRequest, DetailRequestInsulator
-from .serializers import InsulatorSerializer, InsulatorRequestSerializer, DetailRequestInsulatorSerializer, UserSerializer, RegisterSerializer, LoginSerializer
+from .serializers import (
+    InsulatorSerializer, InsulatorRequestSerializer, DetailRequestInsulatorSerializer, 
+    UserSerializer, RegisterSerializer, LoginSerializer
+)
 
-# Minio client singleton
 def get_minio_client():
     return Minio(
         endpoint=f"{settings.MINIO_ENDPOINT}:{settings.MINIO_PORT}",
@@ -26,25 +32,6 @@ def get_minio_client():
         secure=settings.MINIO_SECURE
     )
 
-# Singleton for fixed creator
-_creator_user = None
-def get_creator_user():
-    global _creator_user
-    if _creator_user is None:
-        from django.contrib.auth.models import User
-        _creator_user, _ = User.objects.get_or_create(username='creator', defaults={'password': 'fixpass'})
-    return _creator_user
-
-# Singleton for moderator
-_moderator_user = None
-def get_moderator_user():
-    global _moderator_user
-    if _moderator_user is None:
-        from django.contrib.auth.models import User
-        _moderator_user, _ = User.objects.get_or_create(username='moderator', defaults={'password': 'fixedpass'})
-    return _moderator_user
-
-# Utility for generating Latin file name
 def generate_image_name(original_filename):
     name_part = original_filename.rsplit('.', 1)[0]
     ext = original_filename.rsplit('.', 1)[1] if '.' in original_filename else ''
@@ -54,21 +41,36 @@ def generate_image_name(original_filename):
         return f"{base}-{unique}.{ext}"
     return f"{base}-{unique}"
 
+class IsOwnerOrReadOnly(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in SAFE_METHODS:
+            return True
+        if request.user.is_staff:
+            return True
+        return obj.client == request.user
+
+class IsModerator(BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_staff
+
+class IsModeratorOrReadOnly(BasePermission):
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        return request.user and request.user.is_staff
+
 class InsulatorViewSet(viewsets.ModelViewSet):
-    """
-    /api/insulators/
-    GET list (с фильтрацией по имени и Insulator_active)
-    POST create (без изображения)
-    GET /{id}/ retrieve
-    PUT /{id}/ update
-    DELETE /{id}/ destroy (удаляет изображение из minio если есть)
-    POST /{id}/upload-image/ - загрузка/замена изображения
-    POST /{id}/add-to-request/ - добавляет услугу в черновик текущего пользователя
-    """
     queryset = Insulator.objects.all()
     serializer_class = InsulatorSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsModeratorOrReadOnly]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
+
+    def get_permissions(self):
+        if self.action == 'add_to_request':
+            permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [IsModeratorOrReadOnly]
+        return [permission() for permission in permission_classes]
 
     def get_queryset(self):
         qs = Insulator.objects.all()
@@ -132,8 +134,7 @@ class InsulatorViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='add-to-request')
     def add_to_request(self, request, pk=None):
         insulator = self.get_object()
-        user = get_creator_user()
-
+        user = request.user
         draft = InsulatorRequest.objects.filter(client=user, status_request=InsulatorRequest.Status.DRAFT).first()
         if not draft:
             draft = InsulatorRequest.objects.create(
@@ -160,33 +161,32 @@ class InsulatorViewSet(viewsets.ModelViewSet):
         return Response({"detail": "Added to draft", "request_id": draft.id}, status=status.HTTP_201_CREATED)
 
 class InsulatorRequestViewSet(viewsets.ModelViewSet):
-    """
-    /api/insulatorrequests/
-    GET list (с фильтрацией по статусу и диапазону даты формирования, все статусы)
-    GET /{id}/ retrieve (с услугами и картинками)
-    PUT /{id}/ update (изменение полей заявки)
-    DELETE /{id}/ destroy (только DRAFT -> DELETED)
-    GET /cart-icon/ (id черновика и количество услуг)
-    PUT /{id}/form/ (перевод в FORMED, проверка полей)
-    PUT /{id}/complete/ (модератор завершает, вычисления)
-    PUT /{id}/reject/ (модератор отклоняет)
-    DELETE /{id}/items/{insulator_id}/ (удаление м-м)
-    PUT /{id}/items/{insulator_id}/ (изменение м-м)
-    """
     queryset = InsulatorRequest.objects.none()
     serializer_class = InsulatorRequestSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+
+    def get_permissions(self):
+        if self.action in ['complete', 'reject']:
+            permission_classes = [IsAuthenticated, IsModerator]
+        elif self.action == 'cart_icon':
+            permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+        return [permission() for permission in permission_classes]
 
     def get_queryset(self):
-        user = get_creator_user()
-        qs = InsulatorRequest.objects.filter(client=user)  # Убрана проверка на DRAFT и DELETED
+        user = self.request.user
+        if user.is_staff:
+            qs = InsulatorRequest.objects.all()
+        else:
+            qs = InsulatorRequest.objects.filter(client=user)
         status_filter = self.request.query_params.get('status')
         if status_filter:
             qs = qs.filter(status_request=status_filter)
         from_date = self.request.query_params.get('from_date')
-        to_date = self.request.query_params.get('to_date')
         if from_date:
             qs = qs.filter(formation_datetime__gte=from_date)
+        to_date = self.request.query_params.get('to_date')
         if to_date:
             qs = qs.filter(formation_datetime__lte=to_date)
         return qs.order_by('-creation_datetime')
@@ -202,6 +202,8 @@ class InsulatorRequestViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
+        if not (instance.client == request.user or request.user.is_staff):
+            return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
         if instance.status_request not in [InsulatorRequest.Status.DRAFT, InsulatorRequest.Status.FORMED]:
             return Response({"detail": "Cannot edit in this status"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(instance, data=request.data, partial=True)
@@ -211,6 +213,8 @@ class InsulatorRequestViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+        if not instance.client == request.user:
+            return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
         if instance.status_request != InsulatorRequest.Status.DRAFT:
             return Response({"detail": "Can only delete draft"}, status=status.HTTP_400_BAD_REQUEST)
         instance.status_request = InsulatorRequest.Status.DELETED
@@ -219,7 +223,7 @@ class InsulatorRequestViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='cart-icon')
     def cart_icon(self, request):
-        user = get_creator_user()
+        user = request.user
         draft = InsulatorRequest.objects.filter(client=user, status_request=InsulatorRequest.Status.DRAFT).first()
         if not draft:
             return Response({"request_id": None, "count": 0})
@@ -229,6 +233,8 @@ class InsulatorRequestViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['put'], url_path='form')
     def form(self, request, pk=None):
         instance = self.get_object()
+        if not (instance.client == request.user or request.user.is_staff):
+            return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
         if instance.status_request != InsulatorRequest.Status.DRAFT:
             return Response({"detail": "Only draft can be formed"}, status=status.HTTP_400_BAD_REQUEST)
         if not all([instance.climate_zone, instance.required_r_value > 0, instance.wall_type, instance.norm_standard]):
@@ -240,31 +246,30 @@ class InsulatorRequestViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['put'], url_path='complete')
     def complete(self, request, pk=None):
+        if not request.user.is_staff:
+            return Response({"detail": "Moderator permission required"}, status=status.HTTP_403_FORBIDDEN)
         instance = self.get_object()
         if instance.status_request != InsulatorRequest.Status.FORMED:
             return Response({"detail": "Only formed can be completed"}, status=status.HTTP_400_BAD_REQUEST)
-        moderator = get_moderator_user()
-        instance.manager = moderator
+        instance.manager = request.user
         instance.completion_datetime = datetime.now()
         instance.status_request = InsulatorRequest.Status.COMPLETED
         details = DetailRequestInsulator.objects.filter(detail_request=instance)
-        total_cost = Decimal(0)
         for detail in details:
             detail.calculated_thickness = instance.required_r_value * detail.insulator.thermal_conductivity
             detail.save()
-            total_cost += detail.insulator.price_per_m2 * Decimal(detail.quantity)
         instance.total_thickness = details.aggregate(Sum('calculated_thickness'))['calculated_thickness__sum'] or 0
-        delivery_date = datetime.now() + timedelta(days=15)
         instance.save()
         return Response(self.get_serializer(instance).data)
 
     @action(detail=True, methods=['put'], url_path='reject')
     def reject(self, request, pk=None):
+        if not request.user.is_staff:
+            return Response({"detail": "Moderator permission required"}, status=status.HTTP_403_FORBIDDEN)
         instance = self.get_object()
         if instance.status_request != InsulatorRequest.Status.FORMED:
             return Response({"detail": "Only formed can be rejected"}, status=status.HTTP_400_BAD_REQUEST)
-        moderator = get_moderator_user()
-        instance.manager = moderator
+        instance.manager = request.user
         instance.completion_datetime = datetime.now()
         instance.status_request = InsulatorRequest.Status.REJECTED
         instance.save()
@@ -273,6 +278,8 @@ class InsulatorRequestViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['delete'], url_path='items/(?P<insulator_id>\d+)')
     def remove_item(self, request, pk=None, insulator_id=None):
         instance = self.get_object()
+        if not instance.client == request.user:
+            return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
         if instance.status_request != InsulatorRequest.Status.DRAFT:
             return Response({"detail": "Only in draft"}, status=status.HTTP_400_BAD_REQUEST)
         try:
@@ -290,6 +297,8 @@ class InsulatorRequestViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['put'], url_path='items/(?P<insulator_id>\d+)')
     def update_item(self, request, pk=None, insulator_id=None):
         instance = self.get_object()
+        if not instance.client == request.user:
+            return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
         if instance.status_request != InsulatorRequest.Status.DRAFT:
             return Response({"detail": "Only in draft"}, status=status.HTTP_400_BAD_REQUEST)
         try:
@@ -304,6 +313,11 @@ class InsulatorRequestViewSet(viewsets.ModelViewSet):
 class UserViewSet(viewsets.GenericViewSet):
     permission_classes = [AllowAny]
     serializer_class = UserSerializer
+
+    def get_permissions(self):
+        if self.action in ['me', 'update_me']:
+            return [IsAuthenticated()]
+        return super().get_permissions()
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def register(self, request):
@@ -323,19 +337,72 @@ class UserViewSet(viewsets.GenericViewSet):
         serializer.save()
         return Response(serializer.data)
 
+@swagger_auto_schema(
+    method='post',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'username': openapi.Schema(type=openapi.TYPE_STRING),
+            'password': openapi.Schema(type=openapi.TYPE_STRING),
+        },
+        required=['username', 'password']
+    ),
+    responses={
+        200: openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'refresh': openapi.Schema(type=openapi.TYPE_STRING),
+                'access': openapi.Schema(type=openapi.TYPE_STRING),
+                'sessionid': openapi.Schema(type=openapi.TYPE_STRING),  # Добавим sessionid
+            }
+        ),
+        400: 'Invalid credentials'
+    }
+)
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def auth_login(request):
     serializer = LoginSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    user = authenticate(username=serializer.validated_data['username'], password=serializer.validated_data['password'])
-    if user:
-        login(request, user)
-        return Response({"detail": "Logged in successfully"}, status=status.HTTP_200_OK)
-    return Response({"detail": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+    user = authenticate(request, username=serializer.validated_data['username'], password=serializer.validated_data['password'])
+    if user is None:
+        return Response({"detail": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Сохраняем сессию
+    login(request, user)
+    
+    # Генерируем JWT
+    refresh = RefreshToken.for_user(user)
+    
+    # Получаем sessionid из текущей сессии
+    sessionid = request.session.session_key
+    if not sessionid:
+        request.session.create()
+        sessionid = request.session.session_key
+    
+    response = Response({
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+        'sessionid': sessionid,
+    }, status=status.HTTP_200_OK)
+    
+    # Устанавливаем куки sessionid
+    response.set_cookie(
+        'sessionid',
+        sessionid,
+        max_age=1209600,  # 2 недели
+        httponly=True,
+        secure=False,  # Установите True для HTTPS
+        samesite='Lax'
+    )
+    
+    return response
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def auth_logout(request):
     logout(request)
-    return Response({"detail": "Logged out"})
+    response = Response({"detail": "Logged out"}, status=status.HTTP_200_OK)
+    response.delete_cookie('sessionid')
+    return response
