@@ -1,7 +1,6 @@
+# calculator/models.py
 from django.db import models
 from django.contrib.auth.models import User
-
-
 
 class Insulator(models.Model):
     insulator_name = models.CharField(max_length=255)

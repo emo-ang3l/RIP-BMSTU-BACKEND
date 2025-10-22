@@ -1,7 +1,7 @@
+# calculator/api/views.py
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal
-
 
 from django.conf import settings
 from django.utils.text import slugify
@@ -95,7 +95,31 @@ class InsulatorViewSet(viewsets.ModelViewSet):
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['post'], url_path='upload-image')
+    @swagger_auto_schema(
+        method='post',
+        manual_parameters=[
+            openapi.Parameter(
+                name='image',
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
+                description='Image file to upload'
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description='Image uploaded',
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'image_key': openapi.Schema(type=openapi.TYPE_STRING),
+                        'url': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            )
+        }
+    )
+    @action(detail=True, methods=['post'], url_path='upload-image', parser_classes=[MultiPartParser])
     def upload_image(self, request, pk=None):
         instance = self.get_object()
         upload = request.FILES.get('image')
@@ -275,7 +299,7 @@ class InsulatorRequestViewSet(viewsets.ModelViewSet):
         instance.save()
         return Response(self.get_serializer(instance).data)
 
-    @action(detail=True, methods=['delete'], url_path='items/(?P<insulator_id>\d+)')
+    @action(detail=True, methods=['delete'], url_path='items/(?P<insulator_id>\\d+)')
     def remove_item(self, request, pk=None, insulator_id=None):
         instance = self.get_object()
         if not instance.client == request.user:
@@ -294,7 +318,7 @@ class InsulatorRequestViewSet(viewsets.ModelViewSet):
         except DetailRequestInsulator.DoesNotExist:
             return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    @action(detail=True, methods=['put'], url_path='items/(?P<insulator_id>\d+)')
+    @action(detail=True, methods=['put'], url_path='items/(?P<insulator_id>\\d+)')
     def update_item(self, request, pk=None, insulator_id=None):
         instance = self.get_object()
         if not instance.client == request.user:
@@ -353,13 +377,12 @@ class UserViewSet(viewsets.GenericViewSet):
             properties={
                 'refresh': openapi.Schema(type=openapi.TYPE_STRING),
                 'access': openapi.Schema(type=openapi.TYPE_STRING),
-                'sessionid': openapi.Schema(type=openapi.TYPE_STRING),  # Добавим sessionid
+                'sessionid': openapi.Schema(type=openapi.TYPE_STRING),
             }
         ),
         400: 'Invalid credentials'
     }
 )
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def auth_login(request):
